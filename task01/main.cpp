@@ -2,7 +2,7 @@
 #include <iostream>
 #include <cassert>
 #include <vector>
-#include <filesystem>
+#include <experimental/filesystem>
 //
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
@@ -65,6 +65,10 @@ void draw_polygon(
         float p1x = polygon_xy[i1_vtx * 2 + 0] - x;
         float p1y = polygon_xy[i1_vtx * 2 + 1] - y;
         // write a few lines of code to compute winding number (hint: use atan2)
+        float mult_norm = sqrt(p0x*p0x + p0y*p0y) * sqrt(p1x*p1x + p1y*p1y);
+        float c_theta = (p0x*p1x+p0y*p1y) / mult_norm;
+        float s_theta = (p0y*p1x - p0x*p1y) / mult_norm;
+        winding_number +=  atan2(s_theta, c_theta)/(2*M_PI);
       }
       const int int_winding_number = int(std::round(winding_number));
       if (int_winding_number == 1 ) { // if (x,y) is inside the polygon
@@ -91,6 +95,34 @@ void dda_line(
   auto dx = x1 - x0;
   auto dy = y1 - y0;
   // write some code below to paint pixel on the line with color `brightness`
+  if(abs(dx) >= abs(dy)){
+    // step along x diretion
+    float m = dy / dx;
+    int iw_start = 0;
+    int iw_end = 0;
+    float y_start = 0.;
+    // make sure from left to right
+    x0 <= x1? iw_start= x0 + 0.5f : iw_start=x1 + 0.5f;  // round-up
+    x0 <= x1? iw_end = x1 + 0.5f : iw_end = x0 + 0.5f; // round-up
+    x0 <= x1? y_start = y0 : y_start = y1;
+    for (int iw= iw_start; iw <iw_end; ++iw) {
+      int ih = y_start +  m*(iw-iw_start) + 0.5f; // round-up
+      img_data[ih*width + iw] = brightness;}
+  }
+  else{
+    // step along y diretion
+    float m = dx / dy;
+    int ih_start = 0;
+    int ih_end = 0;
+    float x_start = 0.;
+    // make sure from down to top
+    y0 <= y1? ih_start= y0 + 0.5f : ih_start=y1 + 0.5f;  // round-up
+    y0 <= y1? ih_end = y1 + 0.5f : ih_end = y0 + 0.5f;  // round-up
+    y0 <= y1? x_start = x0 : x_start = x1;
+    for (int ih= ih_start; ih <ih_end; ++ih) {
+      int iw = x_start +  m*(ih-ih_start) + 0.5f; //round-up
+      img_data[ih*width + iw] = brightness;}
+  }
 }
 
 int main() {
@@ -116,6 +148,6 @@ int main() {
   dda_line(50.0, 50.0, 50.0, 10.0, img_data, width, 0); // down
   // save gray scale image with 1 byte depth
   stbi_write_png(
-      (std::filesystem::path(PROJECT_SOURCE_DIR) / "output.png").string().c_str(),
+      (std::experimental::filesystem::path(PROJECT_SOURCE_DIR) / "output.png").string().c_str(),
       width, height, 1,img_data.data(), width);
 }

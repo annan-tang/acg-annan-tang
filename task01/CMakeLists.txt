@@ -5,7 +5,6 @@ cmake_minimum_required(VERSION 3.10)  # specify the version of cmake
 enable_language(CXX)  # we are using C++
 set(CMAKE_CXX_STANDARD 17)  # we are using C++ 17
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)  # we are using STL library
-
 #############################
 # set project name
 
@@ -29,5 +28,5 @@ add_executable(${PROJECT_NAME}
     main.cpp
 )
 
-target_link_libraries(${PROJECT_NAME}
+target_link_libraries(${PROJECT_NAME} PRIVATE "stdc++fs"
 )
