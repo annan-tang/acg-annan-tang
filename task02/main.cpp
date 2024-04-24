@@ -1,5 +1,5 @@
-#include <filesystem>
-// #include <experimental/filesystem> // uncomment here if the <filesystem> cannot be included above
+// #include <filesystem>
+#include <experimental/filesystem> // uncomment here if the <filesystem> cannot be included above
 //
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
@@ -41,8 +41,8 @@ int number_of_intersection_ray_against_edge(
   auto a = area(org, org + dir, ps);
   auto b = area(org, pe, org + dir);
   auto c = area(org, ps, pe);
-  auto d = area(org + dir, ps, pe);
-  if (a * b > 0.f && d * c > 0.f && fabs(d) > fabs(c)) { return 1; }
+    auto d = area(dir+ps, ps, pe);
+  if (a * b > 0.f && d * c < 0.f) { return 1; }
   return 0;
 }
 
@@ -62,12 +62,32 @@ int number_of_intersection_ray_against_quadratic_bezier(
     const Eigen::Vector2f &pc,
     const Eigen::Vector2f &pe) {
   // comment out below to do the assignment
-  return number_of_intersection_ray_against_edge(org, dir, ps, pe);
+  // return number_of_intersection_ray_against_edge(org, dir, ps, pe);
   // write some code below to find the intersection between ray and the quadratic
+    Eigen::Vector2f w(dir[1], -dir[0]);
+    double a = ps.dot(w);
+    double b = pc.dot(w);
+    double c = pe.dot(w);
+    double d = org.dot(w);
+    double val = (b-a)*(b-a)-(a-2*b+c)*(a-d);
+    if(val<0.0){return 0;}//check the exist of real number solution
+    double t_1 = (a-b+sqrt(val))/(a-2*b+c);
+    double t_2 = (a-b-sqrt(val))/(a-2*b+c);
+    int num_root = 0;
+    if(t_1>0. && t_1<1.){
+      Eigen::Vector2f p_t = (1-t_1)*(1-t_1)*ps+ 2*t_1*(1-t_1)*pc + t_1*t_1*pe;
+      if(dir.dot(p_t-org)>0 ){num_root++;} //check the s direction
+    }
+    if(t_2>0. && t_2<1.){
+      Eigen::Vector2f p_t = (1-t_2)*(1-t_2)*ps+ 2*t_2*(1-t_2)*pc + t_2*t_2*pe;
+      if(dir.dot(p_t-org)>0 ){num_root++;} //check the s direction
+    }
+    if (t_1==t_2){num_root--;}  //check the t_1 and t_2 is not the same root
+    return num_root;
 }
 
 int main() {
-  const auto input_file_path = std::filesystem::path(PROJECT_SOURCE_DIR) / ".." / "asset" / "r.svg";
+  const auto input_file_path = std::experimental::filesystem::path(PROJECT_SOURCE_DIR) / ".." / "asset" / "r.svg";
   const auto [width, height, shape] = acg::svg_get_image_size_and_shape(input_file_path);
   if (width == 0) { // something went wrong in loading the function
     std::cout << "file open failure" << std::endl;
@@ -100,6 +120,6 @@ int main() {
       }
     }
   }
-  const auto output_file_path = std::filesystem::path(PROJECT_SOURCE_DIR) / "output.png";
+  const auto output_file_path = std::experimental::filesystem::path(PROJECT_SOURCE_DIR) / "output.png";
   stbi_write_png(output_file_path.string().c_str(), width, height, 1, img_data.data(), width);
 }

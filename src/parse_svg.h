@@ -154,7 +154,7 @@ std::map<std::string, std::string> parse_tag_contents(
   return mapAttr;
 }
 
-std::tuple<int, int, std::string> svg_get_image_size_and_shape(const std::filesystem::path &file_path) {
+std::tuple<int, int, std::string> svg_get_image_size_and_shape(const std::experimental::filesystem::path &file_path) {
   const std::optional<std::vector<char>> aC = get_file_content(file_path.string());
   if (!aC) {
     return std::make_tuple(0, 0, "");
