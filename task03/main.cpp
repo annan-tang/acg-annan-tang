@@ -1,7 +1,7 @@
 #include <iostream>
 #include <cassert>
-#include <filesystem>
-// #include <experimental/filesystem> // uncomment here if the <filesystem> cannot be included above
+// #include <filesystem>
+#include <experimental/filesystem> // uncomment here if the <filesystem> cannot be included above
 #include <vector>
 //
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -70,6 +70,17 @@ void draw_3d_triangle_with_texture(
       Eigen::Matrix4f coeff;
       Eigen::Vector4f rhs;
 
+      coeff << q0[0], q1[0], q2[0], 0,
+               q0[1], q1[1], q2[1], 0,
+               q0[2], q1[2], q2[2], 0,
+               q0[3], q1[3], q2[3], 1;
+      rhs << s[0], s[1], -1, 1;
+
+      Eigen::Vector4f bc_screen = coeff.inverse() * rhs;
+
+      bc=bc_screen.head(3);
+      bc /= bc.sum(); // Normalize to ensure sum is 1
+
       // do not change below
       auto uv = uv0 * bc[0] + uv1 * bc[1] + uv2 * bc[2]; // uv coordinate of the pixel
       // compute pixel coordinate of the texture
@@ -89,7 +100,7 @@ int main() {
   std::vector<unsigned char> img_data_tex;
   { // read texture image
     int bitdepth0;
-    const auto input_tex_path = std::filesystem::path(PROJECT_SOURCE_DIR) / ".." / "asset" / "uv.png";
+    const auto input_tex_path = std::experimental::filesystem::path(PROJECT_SOURCE_DIR) / ".." / "asset" / "uv.png";
     unsigned char *ptr = stbi_load(input_tex_path.string().c_str(), &width_tex, &height_tex, &bitdepth0, 0);
     img_data_tex = std::vector<unsigned char>(ptr, ptr + width_tex * height_tex * bitdepth0);
     free(ptr);
@@ -125,6 +136,6 @@ int main() {
       width_img, height_img, img_data,
       width_tex, height_tex, img_data_tex);
   // write output image
-  const auto output_file_path = std::filesystem::path(PROJECT_SOURCE_DIR) / "output.png";
+  const auto output_file_path = std::experimental::filesystem::path(PROJECT_SOURCE_DIR) / "output.png";
   stbi_write_png(output_file_path.string().c_str(), width_img, height_img, 3, img_data.data(), width_img * 3);
 }
