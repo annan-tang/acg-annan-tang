@@ -40,6 +40,7 @@ add_executable(${PROJECT_NAME}
 
 # https://stackoverflow.com/questions/33678965/need-to-link-cmake-project-to-dl-library
 target_link_libraries(${PROJECT_NAME}
+  stdc++fs
   OpenGL::GL
   glfw
   ${CMAKE_DL_LIBS}

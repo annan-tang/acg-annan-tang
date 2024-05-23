@@ -37,7 +37,7 @@ void draw(
 }
 
 int main() {
-  const auto file_path = std::filesystem::path(PROJECT_SOURCE_DIR) / ".." / "asset" / "armadillo.obj";
+  const auto file_path = std::experimental::filesystem::path(PROJECT_SOURCE_DIR) / ".." / "asset" / "armadillo.obj";
   auto[tri2vtx, vtx2xyz] = acg::read_wavefrontobj_as_3d_triangle_mesh(file_path.string().c_str());
   // bounding box
   auto aabb_max = vtx2xyz.rowwise().maxCoeff();
@@ -69,8 +69,8 @@ int main() {
 
   int shaderProgram;
   { // compile shader program
-    const auto vrt_path = std::filesystem::path(PROJECT_SOURCE_DIR) / "shader.vert";
-    const auto frg_path = std::filesystem::path(PROJECT_SOURCE_DIR) / "shader.frag";
+    const auto vrt_path = std::experimental::filesystem::path(PROJECT_SOURCE_DIR) / "shader.vert";
+    const auto frg_path = std::experimental::filesystem::path(PROJECT_SOURCE_DIR) / "shader.frag";
     std::string vrt = acg::load_file_as_string(vrt_path.string().c_str()); // read source code of vertex shader program
     std::string frg = acg::load_file_as_string(frg_path.string().c_str()); // read source code of fragment shader program
     shaderProgram = acg::create_shader_program(vrt, frg); // compile the shader on GPU

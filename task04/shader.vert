@@ -27,7 +27,15 @@ void main()
         //x0 = ???
         //y0 = ???
         //z0 = ???
+        vec3 org2 = vec3(x0, y0, z0);
+        org2 -= org;
+        vec3 projected_org2 = (org2[0]*nrm[0]+org2[1]*nrm[1]+ org2[2]*nrm[2])*nrm;
+        vec3 mirror_p = (org2 - 2*projected_org2) + org;
+        x0 = mirror_p.x+0.05; // slightly translation to make the figure same as the reference example
+        y0 = mirror_p.y;
+        z0 = mirror_p.z;
     }
+    z0 /=100.;
     // do not edit below
 
     // "gl_Position" is the *output* vertex coordinate in the
