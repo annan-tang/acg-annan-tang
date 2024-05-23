@@ -1,5 +1,5 @@
-#include <filesystem>
-// #include <experimental/filesystem> // uncomment here if the <filesystem> cannot be included above
+// #include <filesystem>
+#include <experimental/filesystem> // uncomment here if the <filesystem> cannot be included above
 #include <cstdlib>
 #include <glad/glad.h>
 #define GL_SILENCE_DEPRECATION
@@ -26,8 +26,8 @@ int main() {
 
   int shaderProgram;
   {
-    const auto vrt_path = std::filesystem::path(SOURCE_DIR) / "shader.vert";
-    const auto frg_path = std::filesystem::path(SOURCE_DIR) / "shader.frag";
+    const auto vrt_path = std::experimental::filesystem::path(SOURCE_DIR) / "shader.vert";
+    const auto frg_path = std::experimental::filesystem::path(SOURCE_DIR) / "shader.frag";
     std::string vrt = acg::load_file_as_string(vrt_path.string().c_str()); // read source code of vertex shader program
     std::string frg = acg::load_file_as_string(frg_path.string().c_str()); // read source code of fragment shader program
     shaderProgram = acg::create_shader_program(vrt, frg); // compile the shader on GPU

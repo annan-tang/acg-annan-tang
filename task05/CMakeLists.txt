@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.10)
 
 #############################
 # set C++ detail
@@ -41,7 +41,7 @@ add_executable(${PROJECT_NAME}
 
 # https://stackoverflow.com/questions/33678965/need-to-link-cmake-project-to-dl-library
 target_link_libraries(${PROJECT_NAME}
-    # stdc++fs # uncomment here if <filesystem> cannot be included
+  stdc++fs # uncomment here if <filesystem> cannot be included
   OpenGL::GL
   glfw
   ${CMAKE_DL_LIBS})
