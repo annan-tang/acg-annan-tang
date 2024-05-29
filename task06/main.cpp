@@ -1,5 +1,5 @@
 #include <iostream>
-#include <filesystem>
+#include <experimental/filesystem>
 #include <fstream>
 #include <optional>
 #include <chrono>
@@ -56,10 +56,17 @@ auto sample_hemisphere(
 
   // For Problem 4, write some code below to sample hemisphere with cosign weight
   // (i.e., the sampling frequency is higher at the top)
-
+  const float phi_x = 2.f * float(M_PI) * unirand.y(); // phi use uniform sample
+  const float z2 = std::acos(std::sqrt(unirand.x())); // z is cos probability sample
+  dir_loc = Eigen::Vector3f( // direction in normal coordinate
+      r * std::cos(phi_x),
+      r * std::sin(phi_x),
+      z2);
+  
 
   // end of Problem 4. Do not modify the two lines below
   const auto dir_out = local_to_world_vector_transformation(nrm) * dir_loc; // rotate the sample (zup -> nrm)
+  pdf = dir_out.dot(nrm)/M_PI;
   return {dir_out, pdf};
 }
 
@@ -123,15 +130,35 @@ void search_collision_in_bvh(
     const std::vector<acg::BvhNode> &bvhnodes) {
   // For problem 2, implement some code here to evaluate BVH
   // hint: use following function
-  //   bvhnodes[i_bvhnode].intersect_bv(ray_org, ray_dir)
+  
+  if (!bvhnodes[i_bvhnode].intersect_bv(ray_org, ray_dir)){return;}// if no bv intersection, finish recursive search on current node
 
   if (bvhnodes[i_bvhnode].is_leaf()) { // this is leaf node
     const unsigned int i_tri = bvhnodes[i_bvhnode].i_node_left;
-    // do something
+    // do intersection check for the actual triangle
+    const auto res = ray_triangle_intersection(ray_org, ray_dir, i_tri, tri2vtx, vtx2xyz);
+    if (!res) { return; }
+    const auto& [q0,n0] = res.value();
+    const float depth = (q0 - ray_org).dot(ray_dir);
+    if (hit_depth > depth) {
+      is_hit = true;
+      hit_depth = depth;
+      hit_pos = q0;
+      hit_normal = n0;
+    }
+
   } else { // this is branch node
     unsigned int i_node_right = bvhnodes[i_bvhnode].i_node_right;
     unsigned int i_node_left =bvhnodes[i_bvhnode].i_node_left;
     // do something (hint recursion)
+    search_collision_in_bvh(
+      is_hit, hit_depth, hit_pos, hit_normal,
+      i_node_left, // recursively check left node
+      ray_org, ray_dir, tri2vtx, vtx2xyz, bvhnodes);
+    search_collision_in_bvh(
+      is_hit, hit_depth, hit_pos, hit_normal,
+      i_node_right, // recursively check right node
+      ray_org, ray_dir, tri2vtx, vtx2xyz, bvhnodes);
   }
 }
 
@@ -148,18 +175,18 @@ auto find_intersection_between_ray_and_triangle_mesh(
   Eigen::Vector3f hit_normal;
 
   // for Problem 2,3,4, comment out from here
-  for (unsigned int i_tri = 0; i_tri < tri2vtx.rows(); ++i_tri) {
-    const auto res = ray_triangle_intersection(ray_org, ray_dir, i_tri, tri2vtx, vtx2xyz);
-    if (!res) { continue; }
-    const auto& [q0,n0] = res.value();
-    const float depth = (q0 - ray_org).dot(ray_dir);
-    if (hit_depth > depth) {
-      is_hit = true;
-      hit_depth = depth;
-      hit_pos = q0;
-      hit_normal = n0;
-    }
-  }
+  // for (unsigned int i_tri = 0; i_tri < tri2vtx.rows(); ++i_tri) {
+  //   const auto res = ray_triangle_intersection(ray_org, ray_dir, i_tri, tri2vtx, vtx2xyz);
+  //   if (!res) { continue; }
+  //   const auto& [q0,n0] = res.value();
+  //   const float depth = (q0 - ray_org).dot(ray_dir);
+  //   if (hit_depth > depth) {
+  //     is_hit = true;
+  //     hit_depth = depth;
+  //     hit_pos = q0;
+  //     hit_normal = n0;
+  //   }
+  // }
   // comment out end
 
   // do not edit from here
@@ -213,7 +240,7 @@ int main() {
         img_data_nrm[(ih * img_width + iw) * 3 + 1] = nrm.y() * 0.5f + 0.5f;
         img_data_nrm[(ih * img_width + iw) * 3 + 2] = nrm.z() * 0.5f + 0.5f;
       }
-      continue; // comment out here for Problem 3,4
+      // continue; // comment out here for Problem 3,4
       //
       if (res) { // ambient occlusion computation
         const unsigned int num_sample_ao = 100;
@@ -225,7 +252,8 @@ int main() {
           const auto res1 = find_intersection_between_ray_and_triangle_mesh(
               pos0, dir, tri2vtx, vtx2xyz, bvhnodes);
           if (!res1) { // if the ray doe not hit anything
-            sum += 1.f; // Problem 3: This is a bug. write some correct code (hint: use `dir.dot(nrm)`, `pdf`, `M_PI`).
+            sum += 1.f/(M_PI*pdf)*dir.dot(nrm); // Problem 3: This is a bug. write some correct code (hint: use `dir.dot(nrm)`, `pdf`, `M_PI`).
+            // sum += 1.f/(num_sample_ao)*dir.dot(nrm);
           }
         }
         img_data_ao[ih * img_width + iw] = sum / float(num_sample_ao); // do not change
@@ -244,7 +272,7 @@ int main() {
       img_data_uchar[i * 3 + 2] = static_cast<unsigned char>(img_data_nrm[i * 3 + 2] * 255.f);
     }
     stbi_write_png(
-        (std::filesystem::path(PROJECT_SOURCE_DIR) / "normal_map.png").string().c_str(),
+        (std::experimental::filesystem::path(PROJECT_SOURCE_DIR) / "normal_map.png").string().c_str(),
         img_width, img_height, 3, img_data_uchar.data(), 0);
   }
   {
@@ -253,7 +281,7 @@ int main() {
       img_data_uchar[i] = static_cast<unsigned char>(img_data_ao[i] * 255.f);
     }
     stbi_write_png(
-        (std::filesystem::path(PROJECT_SOURCE_DIR) / "ao.png").string().c_str(),
+        (std::experimental::filesystem::path(PROJECT_SOURCE_DIR) / "ao.png").string().c_str(),
         img_width, img_height, 1, img_data_uchar.data(), 0);
   }
 }
